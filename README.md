@@ -1,222 +1,559 @@
-# Azure 03 - Deploy To A Registered Domain
+# Azure 05 - Entra Authentication
 
-## Overview
+Follow these steps in order.
 
-This lesson deploys the same static website hosting pattern as Azure02, then points a registered domain at the Azure static website endpoint.
+Do not skip steps.
 
-The Azure infrastructure is deliberately small:
-
-- one Azure resource group
-- one Azure Storage account
-- Blob static website hosting enabled on that storage account
-- the special `$web` container used by Azure static website hosting
-
-The registered domain is managed in Cloudflare. The only manual DNS change used for this lesson is one proxied `www` CNAME record that points to the Azure static website endpoint.
-
-## How The Registered Domain Works
-
-There is no change to `monorepo/infra/main.bicep` for this lesson.
-
-Azure02 already creates the Azure infrastructure we need: a StorageV2 account with Blob static website hosting enabled. Azure gives that static website a public endpoint ending in `web.core.windows.net`.
-
-Azure03 keeps that Azure infrastructure the same. The registered domain is added by creating one Cloudflare DNS record:
-
-```text
-www.all-checks-out.com CNAME azure02xxxxxxxxp4ruuk.z33.web.core.windows.net
-```
-
-Because the record is proxied by Cloudflare, visitors use the registered domain:
-
-```text
-https://www.all-checks-out.com
-```
-
-Cloudflare then forwards the request to the Azure static website endpoint.
-
-## Deployment Steps
-
-Run commands from the repository root.
-
-Install dependencies:
+Run terminal commands from the repository root:
 
 ```bash
-pnpm --dir monorepo install
+cd /Users/richardbray/src/azure05-entra-authentication
 ```
 
-Deploy the Azure infrastructure, build the website, upload it, and print the Azure static website endpoint:
+## Step 1: Install Tools
+
+On macOS, install Homebrew if it is missing:
 
 ```bash
-pnpm --dir monorepo run deploy-everything
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-The final command prints a URL like this:
-
-```text
-https://azure02xxxxxxxxp4ruuk.z33.web.core.windows.net/
-```
-
-Use that Azure endpoint as the target for the Cloudflare `www` CNAME record.
-
-In Cloudflare DNS, add one CNAME record:
-
-```text
-Type: CNAME
-Name: www
-Target: azure02xxxxxxxxp4ruuk.z33.web.core.windows.net
-Proxy status: Proxied
-```
-
-For this deployment, the DNS record is:
-
-```text
-www.all-checks-out.com.  1  IN  CNAME  azure02xxxxxxxxp4ruuk.z33.web.core.windows.net. ; cf_tags=cf-proxied:true
-```
-
-After Cloudflare has saved the record, visit:
-
-```text
-https://www.all-checks-out.com
-```
-
-## Architecture
-
-```mermaid
-flowchart LR
-  developer[Developer terminal]
-  build[Local website build output<br/>apps/ui/dist]
-  bicep[Bicep template<br/>monorepo/infra/main.bicep]
-  scripts[Azure CLI scripts<br/>monorepo/scripts]
-  cloudflare[Cloudflare DNS<br/>www CNAME]
-
-  subgraph Azure
-    rg[Resource group]
-    storage[Storage account<br/>StorageV2 / Standard_LRS]
-    web[Static website hosting<br/>$web container]
-    endpoint[Azure static website endpoint<br/>*.web.core.windows.net]
-  end
-
-  browser[Browser<br/>www.all-checks-out.com]
-
-  developer --> bicep
-  developer --> scripts
-  developer --> build
-  bicep --> rg
-  rg --> storage
-  scripts --> web
-  build --> web
-  storage --> endpoint
-  web --> endpoint
-  cloudflare --> endpoint
-  browser --> cloudflare
-```
-
-## Prerequisites
-
-You need:
-
-- Node.js
-- pnpm
-- Azure CLI
-- an Azure subscription
-- a signed-in Azure CLI session
-- a registered domain managed in Cloudflare
-
-Check your Azure CLI account:
+Install the required tools:
 
 ```bash
-az account show --output table
+brew install node pnpm azure-cli gh
 ```
 
-Sign in if needed:
+Check the tools:
+
+```bash
+node --version
+pnpm --version
+az version
+gh --version
+git --version
+```
+
+## Step 2: Sign In
+
+Sign in to Azure:
 
 ```bash
 az login
 ```
 
-Select a subscription if your account has access to more than one:
+Check the selected Azure subscription:
+
+```bash
+az account show --output table
+```
+
+If the wrong subscription is selected:
 
 ```bash
 az account set --subscription "<subscription-id-or-name>"
 ```
 
-## Configuration
-
-The scripts use these defaults from `monorepo/scripts/config.sh`:
+Sign in to GitHub:
 
 ```bash
-AZURE_LOCATION="${AZURE_LOCATION:-uksouth}"
-AZURE_RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-azure02-static-website-rg}"
-AZURE_DEPLOYMENT_NAME="${AZURE_DEPLOYMENT_NAME:-azure02-static-website}"
-AZURE_APP_NAME="${AZURE_APP_NAME:-azure02web}"
-AZURE_STORAGE_AUTH_MODE="${AZURE_STORAGE_AUTH_MODE:-key}"
-UI_DIST_DIR="${UI_DIST_DIR:-apps/ui/dist}"
+gh auth login
 ```
 
-Override values inline when needed:
+Check GitHub:
 
 ```bash
-AZURE_LOCATION=westeurope AZURE_RESOURCE_GROUP=my-static-site-rg pnpm --dir monorepo run deploy-everything
+gh auth status
+gh repo view
 ```
 
-## Infrastructure
+## Step 3: Install The Project
 
-`monorepo/infra/main.bicep` is intentionally unchanged from Azure02.
+Install packages:
 
-That is the main infrastructure lesson in this repository: the Azure resources do not need to change just because the site is reached through a registered domain. The Azure Storage account still serves the website from its static website endpoint.
+```bash
+pnpm install
+```
 
-The registered-domain infrastructure is the Cloudflare DNS record. It is added manually in Cloudflare:
+Check TypeScript:
+
+```bash
+pnpm run type-check
+```
+
+Build the website:
+
+```bash
+pnpm run ui:build
+```
+
+## Step 4: Create The Entra App Registration
+
+Open the Azure portal:
 
 ```text
-www.all-checks-out.com.  1  IN  CNAME  azure02xxxxxxxxp4ruuk.z33.web.core.windows.net. ; cf_tags=cf-proxied:true
+https://portal.azure.com
 ```
 
-This maps `www.all-checks-out.com` to the Azure static website endpoint while Cloudflare proxies the request.
-
-## Scripts
-
-- `infra:deploy` creates the resource group, deploys Bicep, reads the storage account name, and enables Blob static website hosting.
-- `infra:what-if` previews the Bicep deployment.
-- `ui:build` builds the website into `apps/ui/dist`.
-- `ui:upload` uploads `apps/ui/dist` into the `$web` container.
-- `ui:url` prints the storage account's `primaryEndpoints.web` URL.
-- `deploy-website` builds and uploads the website.
-- `deploy-everything` deploys infrastructure, builds the website, uploads it, and prints the Azure static website endpoint.
-- `infra:destroy` deletes the resource group.
-
-## Project Structure
+Go to:
 
 ```text
-.
-├── README.md
-└── monorepo
-    ├── apps
-    │   └── ui
-    ├── infra
-    │   └── main.bicep
-    ├── scripts
-    │   ├── config.sh
-    │   ├── deploy-infra.sh
-    │   ├── destroy-infra.sh
-    │   ├── show-url.sh
-    │   ├── upload-ui.sh
-    │   └── what-if-infra.sh
-    ├── package.json
-    ├── pnpm-lock.yaml
-    └── pnpm-workspace.yaml
+Microsoft Entra ID
+App registrations
+New registration
 ```
 
-## Troubleshooting
+Enter:
 
-If upload fails because the build output is missing, run:
+```text
+Name: All Checks Out Azure05
+Supported account types: Accounts in this organizational directory only
+Redirect URI platform: Single-page application
+Redirect URI: http://localhost:5173/auth/callback
+```
+
+Click:
+
+```text
+Register
+```
+
+Copy these values:
+
+```text
+Application (client) ID
+Directory (tenant) ID
+```
+
+Go to:
+
+```text
+Authentication
+Single-page application
+Add URI
+```
+
+Add these redirect URIs:
+
+```text
+http://localhost:5173/auth/callback
+https://testing.all-checks-out.com/auth/callback
+https://staging.all-checks-out.com/auth/callback
+https://www.all-checks-out.com/auth/callback
+```
+
+Click:
+
+```text
+Save
+```
+
+## Step 5: Configure Entra For Local Development
+
+Create a local environment file:
 
 ```bash
-pnpm --dir monorepo run ui:build
+touch apps/ui/.env.local
 ```
 
-If `ui:url` cannot find a URL, deploy the infrastructure first:
+Open `apps/ui/.env.local`.
+
+Add these lines:
+
+```text
+VITE_ENTRA_CLIENT_ID=<application-client-id>
+VITE_ENTRA_AUTHORITY=https://login.microsoftonline.com/<directory-tenant-id>
+```
+
+If you have an API scope, add this line too:
+
+```text
+VITE_ENTRA_API_SCOPE=<api-scope>
+```
+
+Run the local website:
 
 ```bash
-pnpm --dir monorepo run infra:deploy
+pnpm run ui:dev
 ```
 
-If the registered domain does not load immediately, wait for the Cloudflare DNS change to propagate and then try `https://www.all-checks-out.com` again.
+Open:
+
+```text
+http://localhost:5173
+```
+
+Stop the local website when you are done:
+
+```text
+Control + C
+```
+
+## Step 6: Configure Entra For GitHub Actions
+
+Set the GitHub repository variables:
+
+```bash
+gh variable set VITE_ENTRA_CLIENT_ID --body "<application-client-id>"
+gh variable set VITE_ENTRA_AUTHORITY --body "https://login.microsoftonline.com/<directory-tenant-id>"
+```
+
+If you have an API scope:
+
+```bash
+gh variable set VITE_ENTRA_API_SCOPE --body "<api-scope>"
+```
+
+Check the variables:
+
+```bash
+gh variable list
+```
+
+## Step 7: Create Or Repair The Course Branches
+
+Run:
+
+```bash
+pnpm run repo:init
+```
+
+If the GitHub remote is missing, run this instead:
+
+```bash
+pnpm run repo:init <github-url>
+```
+
+Check the branches:
+
+```bash
+git branch --list
+```
+
+You should see:
+
+```text
+main
+testing
+staging
+production
+```
+
+## Step 8: Create The GitHub Actions Azure Credential
+
+Use this repo prefix code:
+
+```bash
+REPO_PREFIX_CODE=azure05
+```
+
+Run:
+
+```bash
+APP_PREFIX="all-checks-out-$REPO_PREFIX_CODE-github-actions" pnpm run setup:github-azure
+```
+
+If these instructions are copied into a later repo, change the prefix code.
+
+Examples:
+
+```text
+azure04
+azure05
+azure06
+```
+
+Check the GitHub secret:
+
+```bash
+gh secret list
+```
+
+You should see:
+
+```text
+AZURE_CREDENTIALS
+```
+
+## Step 9: Commit Everything
+
+Check the files:
+
+```bash
+git status
+```
+
+Add the files:
+
+```bash
+git add .
+```
+
+Commit:
+
+```bash
+git commit -m "Prepare Azure05 phased delivery"
+```
+
+Push `main`:
+
+```bash
+git push -u origin main
+```
+
+## Step 10: Release To Testing
+
+Run:
+
+```bash
+pnpm run release:testing
+```
+
+Wait for GitHub Actions:
+
+```bash
+pnpm run testing:wait-for-deploy
+```
+
+Get the testing DNS target:
+
+```bash
+pnpm run testing:get-storage-account
+```
+
+Copy the value it prints.
+
+In Cloudflare, create or edit this DNS record:
+
+```text
+Type: CNAME
+Name: testing
+Target: <the value printed by pnpm run testing:get-storage-account>
+Proxy status: DNS only
+```
+
+Wait until DNS is ready:
+
+```bash
+dig +short CNAME testing.all-checks-out.com
+```
+
+The command must print the same target value.
+
+Connect the testing domain in Azure:
+
+```bash
+pnpm run testing:connect-domain
+```
+
+In Cloudflare, edit the same record:
+
+```text
+Proxy status: Proxied
+```
+
+Open:
+
+```text
+https://testing.all-checks-out.com
+```
+
+## Step 11: Release To Staging
+
+Run:
+
+```bash
+pnpm run release:staging
+```
+
+Wait for GitHub Actions:
+
+```bash
+pnpm run staging:wait-for-deploy
+```
+
+Get the staging DNS target:
+
+```bash
+pnpm run staging:get-storage-account
+```
+
+Copy the value it prints.
+
+In Cloudflare, create or edit this DNS record:
+
+```text
+Type: CNAME
+Name: staging
+Target: <the value printed by pnpm run staging:get-storage-account>
+Proxy status: DNS only
+```
+
+Wait until DNS is ready:
+
+```bash
+dig +short CNAME staging.all-checks-out.com
+```
+
+The command must print the same target value.
+
+Connect the staging domain in Azure:
+
+```bash
+pnpm run staging:connect-domain
+```
+
+In Cloudflare, edit the same record:
+
+```text
+Proxy status: Proxied
+```
+
+Open:
+
+```text
+https://staging.all-checks-out.com
+```
+
+## Step 12: Release To Production
+
+Run:
+
+```bash
+pnpm run release:production
+```
+
+Wait for GitHub Actions:
+
+```bash
+pnpm run production:wait-for-deploy
+```
+
+Get the production DNS target:
+
+```bash
+pnpm run production:get-storage-account
+```
+
+Copy the value it prints.
+
+In Cloudflare, create or edit this DNS record:
+
+```text
+Type: CNAME
+Name: www
+Target: <the value printed by pnpm run production:get-storage-account>
+Proxy status: DNS only
+```
+
+Wait until DNS is ready:
+
+```bash
+dig +short CNAME www.all-checks-out.com
+```
+
+The command must print the same target value.
+
+Connect the production domain in Azure:
+
+```bash
+pnpm run production:connect-domain
+```
+
+In Cloudflare, edit the same record:
+
+```text
+Proxy status: Proxied
+```
+
+Open:
+
+```text
+https://www.all-checks-out.com
+```
+
+## Normal Release Commands
+
+Use these after the first setup is finished.
+
+Testing:
+
+```bash
+pnpm run release:testing
+pnpm run testing:wait-for-deploy
+```
+
+Staging:
+
+```bash
+pnpm run release:staging
+pnpm run staging:wait-for-deploy
+```
+
+Production:
+
+```bash
+pnpm run release:production
+pnpm run production:wait-for-deploy
+```
+
+## Useful Check Commands
+
+Check Azure:
+
+```bash
+az account show --output table
+```
+
+Check GitHub:
+
+```bash
+gh auth status
+gh repo view
+```
+
+Check branches:
+
+```bash
+git branch --list
+```
+
+Check GitHub Actions runs:
+
+```bash
+gh run list --workflow deploy.yml
+```
+
+Preview Azure changes:
+
+```bash
+pnpm run whatif:testing
+pnpm run whatif:staging
+pnpm run whatif:production
+```
+
+## Delete Azure Environments
+
+Testing:
+
+```bash
+pnpm run destroy:testing
+```
+
+Staging:
+
+```bash
+pnpm run destroy:staging
+```
+
+Production:
+
+```bash
+pnpm run destroy:production
+```
+
+For production, type this when asked:
+
+```text
+DELETE-PRODUCTION
+```
