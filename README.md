@@ -4,11 +4,11 @@
 
 This repository deploys the same React static website into three separate Azure environments, with Microsoft Entra sign-in configured separately for each one.
 
-| Environment | Branch | Azure resource group | Public URL |
-| --- | --- | --- | --- |
-| Testing | `testing` | `all-checks-out-testing-rg` | `https://testing.all-checks-out.com` |
-| Staging | `staging` | `all-checks-out-staging-rg` | `https://staging.all-checks-out.com` |
-| Production | `production` | `all-checks-out-production-rg` | `https://www.all-checks-out.com` |
+| Environment | Branch       | Azure resource group           | Public URL                           |
+| ----------- | ------------ | ------------------------------ | ------------------------------------ |
+| Testing     | `testing`    | `all-checks-out-testing-rg`    | `https://testing.all-checks-out.com` |
+| Staging     | `staging`    | `all-checks-out-staging-rg`    | `https://staging.all-checks-out.com` |
+| Production  | `production` | `all-checks-out-production-rg` | `https://www.all-checks-out.com`     |
 
 Development happens on `main`, but `main` does not deploy automatically.
 
@@ -33,11 +33,11 @@ Each environment has its own Azure resource group, storage account, static websi
 
 These commands look similar, but they do different jobs.
 
-| Command family | Example | Meaning |
-| --- | --- | --- |
-| `whatif:*` | `pnpm run whatif:testing` | Ask Azure what infrastructure would change. This is a preview. |
-| `deploy:*` | `pnpm run deploy:testing` | Deploy directly from your terminal to Azure. |
-| `release:*` | `pnpm run release:testing` | Promote a Git branch and let GitHub Actions deploy. |
+| Command family | Example                    | Meaning                                                        |
+| -------------- | -------------------------- | -------------------------------------------------------------- |
+| `whatif:*`     | `pnpm run whatif:testing`  | Ask Azure what infrastructure would change. This is a preview. |
+| `deploy:*`     | `pnpm run deploy:testing`  | Deploy directly from your terminal to Azure.                   |
+| `release:*`    | `pnpm run release:testing` | Promote a Git branch and let GitHub Actions deploy.            |
 
 Normal course flow uses `release:*`.
 
@@ -47,20 +47,19 @@ Manual troubleshooting or first Azure smoke tests can use `deploy:*`.
 
 Read this before running commands.
 
-| Command | Your machine | Azure | GitHub | Cloudflare |
-| --- | --- | --- | --- | --- |
-| `pnpm install` | Installs dependencies into `node_modules`. | No change. | No change. | No change. |
-| `pnpm run type-check` | Runs TypeScript checks. | No change. | No change. | No change. |
-| `pnpm run ui:build` | Builds `apps/ui/dist`. Needs Vite Entra values in `apps/ui/.env`. | No change. | No change. | No change. |
-| `pnpm run repo:init` | Creates a local Git repo if needed, then creates any missing course branches. Existing branches are skipped. | No change. | If `origin` exists, pushes all four branches idempotently. | No change. |
-| `pnpm run repo:init <github-url>` | Creates a local Git repo if needed, creates missing branches, and configures `origin`. | No change. | Adds or verifies `origin` and pushes all four branches idempotently. | No change. |
-| `pnpm run deploy:testing` | Generates `apps/ui/.env`, builds the UI, and uploads `apps/ui/dist`. | Creates or updates testing infrastructure, Entra app registration, App Configuration values, and static website files. | No change. | No change. |
-| `pnpm run release:testing` | Runs Git commands locally. | Not directly. Azure changes later when GitHub Actions deploys. | Pushes `testing`, triggering GitHub Actions. | No change. |
-| `pnpm run release:staging` | Runs Git commands locally. | Not directly. Azure changes later when GitHub Actions deploys. | Pushes `staging`, triggering GitHub Actions. | No change. |
-| `pnpm run release:production` | Runs Git commands locally. | Not directly. Azure changes later when GitHub Actions deploys. | Pushes `production`, triggering GitHub Actions. | No change. |
-| `pnpm run testing:connect-domain` | Runs Azure CLI. | Connects the custom domain to the testing static website. | No change. | No change. |
-| `pnpm run destroy:testing` | Runs Azure CLI. | Deletes `all-checks-out-testing-rg`. | No change. | No change. |
-| Cloudflare DNS change | No local project change. | No change. | No change. | Creates or updates public domain routing. |
+| Command                           | Your machine                                                                                                 | Azure                                                                                                                  | GitHub                                                               | Cloudflare                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------- |
+| `pnpm install`                    | Installs dependencies into `node_modules`.                                                                   | No change.                                                                                                             | No change.                                                           | No change.                                |
+| `pnpm run type-check`             | Runs TypeScript checks.                                                                                      | No change.                                                                                                             | No change.                                                           | No change.                                |
+| `pnpm run ui:build`               | Builds `apps/ui/dist`. Needs Vite Entra values in `apps/ui/.env`.                                            | No change.                                                                                                             | No change.                                                           | No change.                                |
+| `pnpm run repo:init`              | Creates a local Git repo if needed, then creates any missing course branches. Existing branches are skipped. | No change.                                                                                                             | If `origin` exists, pushes all four branches idempotently.           | No change.                                |
+| `pnpm run repo:init <github-url>` | Creates a local Git repo if needed, creates missing branches, and configures `origin`.                       | No change.                                                                                                             | Adds or verifies `origin` and pushes all four branches idempotently. | No change.                                |
+| `pnpm run deploy:testing`         | Generates `apps/ui/.env`, builds the UI, and uploads `apps/ui/dist`.                                         | Creates or updates testing infrastructure, Entra app registration, App Configuration values, and static website files. | No change.                                                           | No change.                                |
+| `pnpm run release:testing`        | Runs Git commands locally.                                                                                   | Not directly. Azure changes later when GitHub Actions deploys.                                                         | Pushes `testing`, triggering GitHub Actions.                         | No change.                                |
+| `pnpm run release:staging`        | Runs Git commands locally.                                                                                   | Not directly. Azure changes later when GitHub Actions deploys.                                                         | Pushes `staging`, triggering GitHub Actions.                         | No change.                                |
+| `pnpm run release:production`     | Runs Git commands locally.                                                                                   | Not directly. Azure changes later when GitHub Actions deploys.                                                         | Pushes `production`, triggering GitHub Actions.                      | No change.                                |
+| `pnpm run destroy:testing`        | Runs Azure CLI.                                                                                              | Deletes `all-checks-out-testing-rg`.                                                                                   | No change.                                                           | No change.                                |
+| Cloudflare DNS change             | No local project change.                                                                                     | No change.                                                                                                             | No change.                                                           | Creates or updates public domain routing. |
 
 The environment name matters:
 
@@ -78,32 +77,36 @@ changes Azure testing only. It does not change staging, production, GitHub, or C
 
 ## What Happens Once And What Happens Many Times?
 
-| Journey event | How often? | Main command or action |
-| --- | --- | --- |
-| Install dependencies on your machine | Once per machine, then again when dependencies change | `pnpm install` |
-| Initialise, repair, or publish course branches | Once per copied repo, or whenever one of the four local or remote branches is missing | `pnpm run repo:init` |
-| Configure GitHub Actions access to Azure | Once per GitHub repo, then again only if you need to replace the credential | `REPO_PREFIX_CODE=azure05 APP_PREFIX="all-checks-out-$REPO_PREFIX_CODE-github-actions" pnpm run setup:github-azure` |
-| Deploy testing for the first time | Once initially, then as needed | `pnpm run release:testing` or `pnpm run deploy:testing` |
-| Configure testing custom domain | Once, then only if the Azure host changes | Add `testing` CNAME, then run `pnpm run testing:connect-domain` |
-| Promote tested work into staging | Many times | `pnpm run release:staging` |
-| Configure staging custom domain | Once, then only if the Azure host changes | Add `staging` CNAME, then run `pnpm run staging:connect-domain` |
-| Promote approved work into production | Many times, carefully | `pnpm run release:production` |
-| Configure production custom domain | Once, then only if the Azure host changes | Add or update the `www` CNAME, then run `pnpm run production:connect-domain` |
-| Generate local frontend Entra config from Azure | Whenever you want to run the UI locally against an Azure environment | `DEPLOY_ENV=testing pnpm run ui:env` |
-| Preview Azure infrastructure changes | Whenever useful | `pnpm run whatif:testing` |
-| Remove an Azure environment | Rarely | `pnpm run destroy:testing` |
+| Journey event                                   | How often?                                                                            | Main command or action                                                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Install dependencies on your machine            | Once per machine, then again when dependencies change                                 | `pnpm install`                                                                                                      |
+| Initialise, repair, or publish course branches  | Once per copied repo, or whenever one of the four local or remote branches is missing | `pnpm run repo:init`                                                                                                |
+| Configure GitHub Actions access to Azure        | Once per GitHub repo, then again only if you need to replace the credential           | `REPO_PREFIX_CODE=azure05 APP_PREFIX="all-checks-out-$REPO_PREFIX_CODE-github-actions" pnpm run setup:github-azure` |
+| Deploy testing for the first time               | Once initially, then as needed                                                        | `pnpm run release:testing` or `pnpm run deploy:testing`                                                             |
+| Configure testing registered domain             | Once, if it has not already been configured                                           | See [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md). |
+| Promote tested work into staging                | Many times                                                                            | `pnpm run release:staging`                                                                                          |
+| Configure staging registered domain             | Once, if it has not already been configured                                           | See [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md). |
+| Promote approved work into production           | Many times, carefully                                                                 | `pnpm run release:production`                                                                                       |
+| Configure production registered domain          | Once, if it has not already been configured                                           | See [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md). |
+| Generate local frontend Entra config from Azure | Whenever you want to run the UI locally against an Azure environment                  | `DEPLOY_ENV=testing pnpm run ui:env`                                                                                |
+| Preview Azure infrastructure changes            | Whenever useful                                                                       | `pnpm run whatif:testing`                                                                                           |
+| Remove an Azure environment                     | Rarely                                                                                | `pnpm run destroy:testing`                                                                                          |
 
 ## Full Journey: From Fresh Clone To Production
 
-Follow these steps in order.
+Do Initial Setup first.
 
-Do not skip steps.
+Then choose either Step 4a or Step 4b.
 
 Run terminal commands from the repository root:
 
 ```bash
 cd /Users/richardbray/src/azure05-entra-authentication
 ```
+
+## Initial Setup
+
+Do these steps first for both deployment options.
 
 ## Step 1: Install Tools
 
@@ -113,7 +116,9 @@ On macOS, install Homebrew if it is missing:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-Install the required tools:
+Install the required tools.
+
+`gh` is needed for the GitHub Actions deployment option.
 
 ```bash
 brew install node pnpm azure-cli gh
@@ -129,7 +134,7 @@ gh --version
 git --version
 ```
 
-## Step 2: Sign In
+## Step 2: Sign In To Azure
 
 Sign in to Azure:
 
@@ -149,19 +154,6 @@ If the wrong subscription is selected:
 az account set --subscription "<subscription-id-or-name>"
 ```
 
-Sign in to GitHub:
-
-```bash
-gh auth login
-```
-
-Check GitHub:
-
-```bash
-gh auth status
-gh repo view
-```
-
 ## Step 3: Install The Project
 
 Install packages:
@@ -178,7 +170,146 @@ pnpm run type-check
 
 Do not worry if `pnpm run ui:build` cannot build yet on a completely fresh machine. This lesson's UI needs Entra configuration values before Vite can build it. Those values are generated after the first infrastructure deployment.
 
-## Step 4: Create Or Repair The Course Branches
+## Choose A Deployment Option
+
+After initial setup, choose one of these paths:
+
+- Step 4a: local deployment from your machine.
+- Step 4b: GitHub Actions CI/CD deployment.
+
+Local deployment is the shortest path when you want to prove Azure05 works from your terminal.
+
+GitHub Actions deployment is the course release path when you want branch promotion and remote CI/CD.
+
+## Step 4a: Deployment Option 1 - Local Deployment
+
+Use this option when you want your terminal to deploy Azure directly.
+
+Local deployment uses your current working tree. It does not create or repair course branches, push to GitHub, or trigger GitHub Actions.
+
+During local deployment, `apps/ui/.env` and `apps/ui/.env.generated.<environment>` are generated on your machine before the local Vite build runs.
+
+### 4a.1 Deploy Testing
+
+Run this from the Azure05 repository root:
+
+```bash
+cd /Users/richardbray/src/azure05-entra-authentication
+pnpm run deploy:testing
+```
+
+The correct Azure05 output includes:
+
+```text
+Ensuring Microsoft Entra app registration: All Checks Out Azure05 testing
+```
+
+It also runs this website deployment chain:
+
+```text
+ui:env
+  -> ui:build
+  -> ui:upload
+```
+
+If the output jumps straight from `infra:deploy` to `ui:build`, you are probably in an earlier repo such as Azure04.
+
+### 4a.2 Test Testing
+
+If no testing registered domain has been created yet, see the Azure04 registered-domain instructions in [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md).
+
+Open:
+
+```text
+https://testing.all-checks-out.com
+```
+
+Sign in. The deployed testing site should redirect through Microsoft Entra and then back to:
+
+```text
+https://testing.all-checks-out.com/auth/callback
+```
+
+### 4a.3 Deploy Staging
+
+Run:
+
+```bash
+pnpm run deploy:staging
+```
+
+During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.staging` are generated on your machine before the local Vite build runs.
+
+### 4a.4 Test Staging
+
+If no staging registered domain has been created yet, see the Azure04 registered-domain instructions in [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md).
+
+Open:
+
+```text
+https://staging.all-checks-out.com
+```
+
+Sign in. The deployed staging site should redirect through Microsoft Entra and then back to:
+
+```text
+https://staging.all-checks-out.com/auth/callback
+```
+
+### 4a.5 Deploy Production
+
+Run:
+
+```bash
+pnpm run deploy:production
+```
+
+During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.production` are generated on your machine before the local Vite build runs.
+
+### 4a.6 Test Production
+
+If no production registered domain has been created yet, see the Azure04 registered-domain instructions in [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md).
+
+Open:
+
+```text
+https://www.all-checks-out.com
+```
+
+Sign in. The deployed production site should redirect through Microsoft Entra and then back to:
+
+```text
+https://www.all-checks-out.com/auth/callback
+```
+
+Production is configured to use `www.all-checks-out.com`. The root domain `all-checks-out.com` is not used by these production deployment commands. You can redirect it to `www` separately in Cloudflare later if you want.
+
+## Step 4b: Deployment Option 2 - GitHub Actions Deployment
+
+Use this option when you want branch promotion and remote CI/CD.
+
+GitHub Actions deployment creates `apps/ui/.env` and `apps/ui/.env.generated.<environment>` on the temporary GitHub Actions runner. Those files are used by the remote Vite build, are not committed to Git, are not copied back to your machine, and disappear when the workflow runner is cleaned up.
+
+This is one larger setup-and-release step because GitHub Actions needs branches, a GitHub remote, a GitHub secret, and committed code before it can deploy.
+
+### 4b.1 Sign In To GitHub
+
+Sign in to GitHub:
+
+```bash
+gh auth login
+```
+
+Check GitHub:
+
+```bash
+gh auth status
+gh repo view
+```
+
+If `gh repo view` fails because this local folder does not have a GitHub remote yet, continue to `4b.2` and use `pnpm run repo:init <github-url>`.
+
+### 4b.2 Create Or Repair The Course Branches
 
 Run:
 
@@ -209,7 +340,7 @@ production
 
 If `origin` is configured, `repo:init` also pushes all four branches to GitHub.
 
-## Step 5: Create The GitHub Actions Azure Credential
+### 4b.3 Create The GitHub Actions Azure Credential
 
 GitHub Actions needs permission to deploy into Azure.
 
@@ -247,7 +378,7 @@ You should see:
 AZURE_CREDENTIALS
 ```
 
-## Step 6: Commit Everything
+### 4b.4 Commit And Push Main
 
 Check the files:
 
@@ -273,7 +404,7 @@ Push `main`:
 git push -u origin main
 ```
 
-## Step 7 (option 1): Release To Testing Using GitHub Actions CICD
+### 4b.5 Release Testing
 
 Run:
 
@@ -295,70 +426,9 @@ pnpm run testing:wait-for-deploy
 
 GitHub Actions deploys the testing environment. During that deployment it creates or updates the testing Entra app registration, writes the Vite Entra settings into Azure App Configuration, generates `apps/ui/.env`, builds the UI, and uploads the result.
 
-Important: in the normal `release:testing` path, `apps/ui/.env` is generated on the temporary GitHub Actions runner, not on your laptop. It is used for the remote Vite build and then disappears when the workflow runner is cleaned up.
+### 4b.6 Test Testing
 
-## Step 7 (option 2): Release To Testing Using Local Deployment
-
-Run:
-
-```bash
-pnpm run deploy:testing
-```
-
-This deploys the testing environment directly from your machine.
-
-It does not promote Git branches.
-
-It does not push to GitHub.
-
-It does not trigger GitHub Actions.
-
-During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.testing` are generated on your machine before the local Vite build runs.
-
-## Step 8: Configure Testing Registered Domain (if not already configured)
-
-Get the testing DNS target:
-
-```bash
-pnpm run testing:get-storage-account
-```
-
-Copy the value it prints.
-
-In Cloudflare, create or edit this DNS record:
-
-```text
-Type: CNAME
-Name: testing
-Target: <the value printed by pnpm run testing:get-storage-account>
-Proxy status: DNS only
-```
-
-Wait until DNS is ready:
-
-```bash
-dig +short CNAME testing.all-checks-out.com
-```
-
-The command must print the same target value.
-
-Connect the testing domain in Azure:
-
-```bash
-pnpm run testing:connect-domain
-```
-
-In Cloudflare, edit the same record:
-
-```text
-Proxy status: Proxied
-```
-
-Recommended Cloudflare settings:
-
-- SSL/TLS encryption mode: `Full`
-- Always Use HTTPS: enabled
-- Automatic HTTPS Rewrites: enabled
+If no testing registered domain has been created yet, see the Azure04 registered-domain instructions in [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md).
 
 Open:
 
@@ -372,7 +442,7 @@ Sign in. The deployed testing site should redirect through Microsoft Entra and t
 https://testing.all-checks-out.com/auth/callback
 ```
 
-## Step 9 (option 1): Release To Staging Using GitHub Actions CICD
+### 4b.7 Release Staging
 
 Run:
 
@@ -394,62 +464,9 @@ pnpm run staging:wait-for-deploy
 
 GitHub Actions deploys the staging environment. During that deployment, `apps/ui/.env` and `apps/ui/.env.generated.staging` are generated on the temporary GitHub Actions runner, used for the remote Vite build, and then discarded when the workflow runner is cleaned up.
 
-## Step 9 (option 2): Release To Staging Using Local Deployment
+### 4b.8 Test Staging
 
-Run:
-
-```bash
-pnpm run deploy:staging
-```
-
-This deploys the staging environment directly from your machine.
-
-It does not promote Git branches.
-
-It does not push to GitHub.
-
-It does not trigger GitHub Actions.
-
-During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.staging` are generated on your machine before the local Vite build runs.
-
-## Step 10: Configure Staging Registered Domain (if not already configured)
-
-Get the staging DNS target:
-
-```bash
-pnpm run staging:get-storage-account
-```
-
-Copy the value it prints.
-
-In Cloudflare, create or edit this DNS record:
-
-```text
-Type: CNAME
-Name: staging
-Target: <the value printed by pnpm run staging:get-storage-account>
-Proxy status: DNS only
-```
-
-Wait until DNS is ready:
-
-```bash
-dig +short CNAME staging.all-checks-out.com
-```
-
-The command must print the same target value.
-
-Connect the staging domain in Azure:
-
-```bash
-pnpm run staging:connect-domain
-```
-
-In Cloudflare, edit the same record:
-
-```text
-Proxy status: Proxied
-```
+If no staging registered domain has been created yet, see the Azure04 registered-domain instructions in [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md).
 
 Open:
 
@@ -463,7 +480,7 @@ Sign in. The deployed staging site should redirect through Microsoft Entra and t
 https://staging.all-checks-out.com/auth/callback
 ```
 
-## Step 11 (option 1): Release To Production Using GitHub Actions CICD
+### 4b.9 Release Production
 
 Run:
 
@@ -485,64 +502,9 @@ pnpm run production:wait-for-deploy
 
 GitHub Actions deploys the production environment. During that deployment, `apps/ui/.env` and `apps/ui/.env.generated.production` are generated on the temporary GitHub Actions runner, used for the remote Vite build, and then discarded when the workflow runner is cleaned up.
 
-## Step 11 (option 2): Release To Production Using Local Deployment
+### 4b.10 Test Production
 
-Run:
-
-```bash
-pnpm run deploy:production
-```
-
-This deploys the production environment directly from your machine.
-
-It does not promote Git branches.
-
-It does not push to GitHub.
-
-It does not trigger GitHub Actions.
-
-During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.production` are generated on your machine before the local Vite build runs.
-
-## Step 12: Configure Production Registered Domain (if not already configured)
-
-Get the production DNS target:
-
-```bash
-pnpm run production:get-storage-account
-```
-
-Copy the value it prints.
-
-In Cloudflare, create or edit this DNS record:
-
-```text
-Type: CNAME
-Name: www
-Target: <the value printed by pnpm run production:get-storage-account>
-Proxy status: DNS only
-```
-
-If a `www` CNAME already exists from an earlier deployment, edit that existing record instead of creating a second `www` record.
-
-Wait until DNS is ready:
-
-```bash
-dig +short CNAME www.all-checks-out.com
-```
-
-The command must print the same target value.
-
-Connect the production domain in Azure:
-
-```bash
-pnpm run production:connect-domain
-```
-
-In Cloudflare, edit the same record:
-
-```text
-Proxy status: Proxied
-```
+If no production registered domain has been created yet, see the Azure04 registered-domain instructions in [azure04-github-actions-phased-delivery/README.md](/Users/richardbray/src/azure04-github-actions-phased-delivery/README.md).
 
 Open:
 
@@ -775,8 +737,21 @@ AZURE_DOMAIN_NAME="${AZURE_DOMAIN_NAME:-$(read_environment_value domainName)}"
 Most deployment scripts start with:
 
 ```bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/config.sh"
 ```
+
+`SCRIPT_DIR` is set by the first line.
+
+`${BASH_SOURCE[0]}` is the path of the script file that is currently running.
+
+`dirname "${BASH_SOURCE[0]}"` gets the folder that contains that script.
+
+`cd ... && pwd` turns that folder into an absolute path.
+
+So when `scripts/deploy-infra.sh` runs, `SCRIPT_DIR` becomes the absolute path to the `scripts` folder. Then `source "$SCRIPT_DIR/config.sh"` loads `scripts/config.sh` from beside the running script.
+
+This pattern lets the script work even if you launch it from a different current directory.
 
 That is why `deploy-infra.sh`, `what-if-infra.sh`, `upload-ui.sh`, `show-url.sh`, `connect-custom-domain.sh`, `destroy-infra.sh`, and `generate-ui-env.sh` all agree on which environment they are working with.
 
@@ -1159,11 +1134,11 @@ The important detail is that Vite environment variables are build-time values. T
 
 That means each deployed static website contains the correct Entra values for the environment that built it:
 
-| Build | Generated values | Redirect URI |
-| --- | --- | --- |
-| Testing | Testing Entra app registration | `https://testing.all-checks-out.com/auth/callback` |
-| Staging | Staging Entra app registration | `https://staging.all-checks-out.com/auth/callback` |
-| Production | Production Entra app registration | `https://www.all-checks-out.com/auth/callback` |
+| Build      | Generated values                  | Redirect URI                                       |
+| ---------- | --------------------------------- | -------------------------------------------------- |
+| Testing    | Testing Entra app registration    | `https://testing.all-checks-out.com/auth/callback` |
+| Staging    | Staging Entra app registration    | `https://staging.all-checks-out.com/auth/callback` |
+| Production | Production Entra app registration | `https://www.all-checks-out.com/auth/callback`     |
 
 ## GitHub Actions
 
