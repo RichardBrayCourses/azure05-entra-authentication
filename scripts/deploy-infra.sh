@@ -16,6 +16,42 @@ az group create \
   --output table
 
 echo ""
+echo "Ensuring Microsoft Entra app registration: $ENTRA_APP_DISPLAY_NAME"
+echo ""
+
+ENTRA_TENANT_ID=$(az account show \
+  --query "tenantId" \
+  --output tsv)
+
+ENTRA_CLIENT_ID=$(az ad app list \
+  --display-name "$ENTRA_APP_DISPLAY_NAME" \
+  --query "[0].appId" \
+  --output tsv)
+
+if [[ -z "$ENTRA_CLIENT_ID" ]]; then
+  ENTRA_CLIENT_ID=$(az ad app create \
+    --display-name "$ENTRA_APP_DISPLAY_NAME" \
+    --sign-in-audience AzureADMyOrg \
+    --query "appId" \
+    --output tsv)
+fi
+
+ENTRA_OBJECT_ID=$(az ad app show \
+  --id "$ENTRA_CLIENT_ID" \
+  --query "id" \
+  --output tsv)
+
+ENTRA_REDIRECT_URIS_JSON=$(node -e "process.stdout.write(JSON.stringify(['http://localhost:5173/auth/callback', 'https://' + process.argv[1] + '/auth/callback']))" "$AZURE_DOMAIN_NAME")
+ENTRA_PATCH_BODY=$(node -e "process.stdout.write(JSON.stringify({ spa: { redirectUris: JSON.parse(process.argv[1]) } }))" "$ENTRA_REDIRECT_URIS_JSON")
+
+az rest \
+  --method PATCH \
+  --uri "https://graph.microsoft.com/v1.0/applications/$ENTRA_OBJECT_ID" \
+  --headers "Content-Type=application/json" \
+  --body "$ENTRA_PATCH_BODY" \
+  --output none
+
+echo ""
 echo "Deploying Bicep template..."
 echo ""
 
@@ -26,6 +62,11 @@ az deployment group create \
   --parameters \
     location="$AZURE_LOCATION" \
     appName="$AZURE_APP_NAME" \
+    environmentName="$ENVIRONMENT_NAME" \
+    domainName="$AZURE_DOMAIN_NAME" \
+    entraClientId="$ENTRA_CLIENT_ID" \
+    entraTenantId="$ENTRA_TENANT_ID" \
+    entraApiScope="$ENTRA_API_SCOPE" \
   --output table
 
 STORAGE_ACCOUNT_NAME=$(az deployment group show \
@@ -61,4 +102,5 @@ echo ""
 echo "Infrastructure deployment complete."
 echo "Environment: $ENVIRONMENT_NAME"
 echo "Domain: https://$AZURE_DOMAIN_NAME"
+echo "Entra client ID: $ENTRA_CLIENT_ID"
 echo ""
