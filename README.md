@@ -273,7 +273,7 @@ Push `main`:
 git push -u origin main
 ```
 
-## Step 7: Release To Testing
+## Step 7 (option 1): Release To Testing Using GitHub Actions CICD
 
 Run:
 
@@ -294,6 +294,26 @@ pnpm run testing:wait-for-deploy
 ```
 
 GitHub Actions deploys the testing environment. During that deployment it creates or updates the testing Entra app registration, writes the Vite Entra settings into Azure App Configuration, generates `apps/ui/.env`, builds the UI, and uploads the result.
+
+Important: in the normal `release:testing` path, `apps/ui/.env` is generated on the temporary GitHub Actions runner, not on your laptop. It is used for the remote Vite build and then disappears when the workflow runner is cleaned up.
+
+## Step 7 (option 2): Release To Testing Using Local Deployment
+
+Run:
+
+```bash
+pnpm run deploy:testing
+```
+
+This deploys the testing environment directly from your machine.
+
+It does not promote Git branches.
+
+It does not push to GitHub.
+
+It does not trigger GitHub Actions.
+
+During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.testing` are generated on your machine before the local Vite build runs.
 
 ## Step 8: Configure Testing Registered Domain (if not already configured)
 
@@ -352,7 +372,7 @@ Sign in. The deployed testing site should redirect through Microsoft Entra and t
 https://testing.all-checks-out.com/auth/callback
 ```
 
-## Step 9: Release To Staging
+## Step 9 (option 1): Release To Staging Using GitHub Actions CICD
 
 Run:
 
@@ -371,6 +391,26 @@ Wait for GitHub Actions:
 ```bash
 pnpm run staging:wait-for-deploy
 ```
+
+GitHub Actions deploys the staging environment. During that deployment, `apps/ui/.env` and `apps/ui/.env.generated.staging` are generated on the temporary GitHub Actions runner, used for the remote Vite build, and then discarded when the workflow runner is cleaned up.
+
+## Step 9 (option 2): Release To Staging Using Local Deployment
+
+Run:
+
+```bash
+pnpm run deploy:staging
+```
+
+This deploys the staging environment directly from your machine.
+
+It does not promote Git branches.
+
+It does not push to GitHub.
+
+It does not trigger GitHub Actions.
+
+During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.staging` are generated on your machine before the local Vite build runs.
 
 ## Step 10: Configure Staging Registered Domain (if not already configured)
 
@@ -423,7 +463,7 @@ Sign in. The deployed staging site should redirect through Microsoft Entra and t
 https://staging.all-checks-out.com/auth/callback
 ```
 
-## Step 11: Release To Production
+## Step 11 (option 1): Release To Production Using GitHub Actions CICD
 
 Run:
 
@@ -442,6 +482,26 @@ Wait for GitHub Actions:
 ```bash
 pnpm run production:wait-for-deploy
 ```
+
+GitHub Actions deploys the production environment. During that deployment, `apps/ui/.env` and `apps/ui/.env.generated.production` are generated on the temporary GitHub Actions runner, used for the remote Vite build, and then discarded when the workflow runner is cleaned up.
+
+## Step 11 (option 2): Release To Production Using Local Deployment
+
+Run:
+
+```bash
+pnpm run deploy:production
+```
+
+This deploys the production environment directly from your machine.
+
+It does not promote Git branches.
+
+It does not push to GitHub.
+
+It does not trigger GitHub Actions.
+
+During this local deployment, `apps/ui/.env` and `apps/ui/.env.generated.production` are generated on your machine before the local Vite build runs.
 
 ## Step 12: Configure Production Registered Domain (if not already configured)
 
@@ -500,7 +560,7 @@ Production is configured to use `www.all-checks-out.com`. The root domain `all-c
 
 ## Normal Day-To-Day Release Flow
 
-After first-time setup, the repeated flow is:
+After first-time setup, the preferred GitHub Actions CI/CD flow is:
 
 ```bash
 pnpm run release:testing
@@ -518,6 +578,18 @@ Use them in order.
 Do not deploy directly from `main`.
 
 Do not deploy from feature branches.
+
+The local deployment alternative is:
+
+```bash
+pnpm run deploy:testing
+pnpm run deploy:staging
+pnpm run deploy:production
+```
+
+Use local deployment when GitHub Actions is not ready yet, or when you deliberately want your terminal to deploy Azure directly.
+
+Local deployment uses your current working tree. It does not promote branches, push to GitHub, or trigger GitHub Actions.
 
 ## Useful Check Commands
 
@@ -932,6 +1004,35 @@ The Bicep file creates the Azure resources. One extra infrastructure step is sti
 ## Frontend Build Configuration
 
 This section explains how each environment's Azure and Entra configuration becomes available to the Vite UI at build time.
+
+## Important: Where The Generated .env File Exists
+
+In the normal release flow, the generated frontend environment files are created on the GitHub Actions runner:
+
+```text
+apps/ui/.env
+apps/ui/.env.generated.<environment>
+```
+
+They are used by `vite build` on that temporary GitHub Actions machine.
+
+They do not get copied back to your developer machine.
+
+They are not committed to Git.
+
+They disappear when the GitHub Actions job finishes.
+
+You only get these files on your own machine if you deliberately run a local command that generates them, such as:
+
+```bash
+DEPLOY_ENV=testing pnpm run ui:env
+```
+
+or a local deployment command, such as:
+
+```bash
+pnpm run deploy:testing
+```
 
 The current UI reads Entra settings with Vite:
 
