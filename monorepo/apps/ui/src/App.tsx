@@ -22,6 +22,8 @@ import {
   StakeholderPortalPage,
 } from "./pages/ConsolePages";
 import NotFound from "./pages/NotFound";
+import EntraCallbackPage from "./pages/EntraCallbackPage";
+import SetEmailAddressesPage from "./pages/SetEmailAddressesPage";
 import SignInPage from "./pages/SignInPage";
 
 const AppContent = () => {
@@ -32,7 +34,13 @@ const AppContent = () => {
   document.documentElement.classList.toggle("dark", dark);
 
   if (!user.isLoggedIn) {
-    return <SignInPage />;
+    return (
+      <Routes>
+        <Route path="/auth/callback" element={<EntraCallbackPage />} />
+        <Route path="/set-email-addresses" element={<SetEmailAddressesPage />} />
+        <Route path="*" element={<SignInPage />} />
+      </Routes>
+    );
   }
 
   return (

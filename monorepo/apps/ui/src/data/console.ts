@@ -1123,6 +1123,49 @@ export class InMemoryAllChecksOutDatabase {
     return this.authorityTerminology.find((terminology) => terminology.toDto().authorityId === authorityId)?.toDto() ?? null;
   }
 
+  listUserAccounts() {
+    return this.userAccounts.map((account) => account.toDto());
+  }
+
+  updateUserAccountEmail(userAccountId: UserAccountId, email: string) {
+    const existing = this.requireUserAccount(userAccountId);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes("@")) {
+      throw new Error("Enter a valid email address.");
+    }
+    if (
+      this.userAccounts.some(
+        (account) =>
+          account.id !== userAccountId &&
+          account.toDto().email.toLowerCase() === normalizedEmail,
+      )
+    ) {
+      throw new Error("A user account with this email already exists.");
+    }
+    const updated = new UserAccountEntity({
+      ...existing,
+      email: normalizedEmail,
+      updatedAt: this.timestamp(),
+    });
+    this.replaceUserAccount(userAccountId, updated);
+    return updated.toDto();
+  }
+
+  registerUserAccountWithEntra(userAccountId: UserAccountId, entraObjectId: string) {
+    const existing = this.requireUserAccount(userAccountId);
+    const objectId = entraObjectId.trim();
+    if (!objectId) {
+      throw new Error("The Entra object id was not returned.");
+    }
+    const updated = new UserAccountEntity({
+      ...existing,
+      entraObjectId: objectId,
+      updatedAt: this.timestamp(),
+    });
+    this.replaceUserAccount(userAccountId, updated);
+    return updated.toDto();
+  }
+
   updateAuthorityTerminology(command: UpdateAuthorityTerminologyCommand) {
     this.requireAuthority(command.authorityId);
     const timestamp = this.timestamp();
@@ -2227,6 +2270,14 @@ export class InMemoryAllChecksOutDatabase {
     });
     this.userAccounts.push(userAccount);
     return userAccount.toDto();
+  }
+
+  private replaceUserAccount(userAccountId: UserAccountId, userAccount: UserAccountEntity) {
+    const index = this.userAccounts.findIndex((account) => account.id === userAccountId);
+    if (index < 0) {
+      throw new Error(`User account ${userAccountId} was not found.`);
+    }
+    this.userAccounts[index] = userAccount;
   }
 
   private getMembershipUsers(memberships: Array<DomainEntity<MembershipDto>>, entityId: MembershipDto["entityId"]) {

@@ -5,6 +5,14 @@ import {
   ReactNode,
   useEffect,
 } from "react";
+import {
+  clearPendingSelection,
+  completeEntraRedirect,
+  getEntraAccessToken,
+  logoutFromEntra,
+  startEntraLogin,
+  type EntraAuthenticatedIdentity,
+} from "@/lib/entra/auth";
 
 /////////////
 // USER TYPE
@@ -116,7 +124,12 @@ export type SignInSelection = {
 };
 
 interface AuthContextValue extends AuthContextData {
-  login: (selection: SignInSelection) => void;
+  login: (selection: SignInSelection) => Promise<void>;
+  completeEntraSignIn: () => Promise<{
+    selection: SignInSelection;
+    identity: EntraAuthenticatedIdentity;
+  }>;
+  getAccessToken: () => Promise<string | null>;
   switchAccountContext: (selection: SignInSelection) => void;
   logout: () => void;
 }
@@ -198,7 +211,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     saveContext({ user });
   }, [user]);
 
-  const login = (selection: SignInSelection) =>
+  const setAuthenticatedUser = (selection: SignInSelection) =>
     setUser({
       ...LOGGED_IN_USER,
       authenticatableUserId: selection.authenticatableUserId,
@@ -215,11 +228,37 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       stakeholderId: selection.stakeholderId,
     });
 
-  const switchAccountContext = (selection: SignInSelection) => login(selection);
+  const login = async (selection: SignInSelection) => {
+    await startEntraLogin(selection);
+  };
 
-  const logout = () => setUser(LOGGED_OUT_USER);
+  const completeEntraSignIn = async () => {
+    const { selection, identity } = await completeEntraRedirect();
+    if (identity.email.toLowerCase() !== selection.email.toLowerCase()) {
+      throw new Error(
+        `Entra authenticated ${identity.email}, but the selected user is ${selection.email}.`,
+      );
+    }
+    setAuthenticatedUser(selection);
+    clearPendingSelection();
+    return { selection, identity };
+  };
 
-  const sharedData = { user, login, switchAccountContext, logout };
+  const switchAccountContext = (selection: SignInSelection) => setAuthenticatedUser(selection);
+
+  const logout = () => {
+    setUser(LOGGED_OUT_USER);
+    void logoutFromEntra();
+  };
+
+  const sharedData = {
+    user,
+    login,
+    completeEntraSignIn,
+    getAccessToken: getEntraAccessToken,
+    switchAccountContext,
+    logout,
+  };
 
   return (
     <AuthContext.Provider value={sharedData}>{children}</AuthContext.Provider>
