@@ -344,26 +344,18 @@ If `origin` is configured, `repo:init` also pushes all four branches to GitHub.
 
 GitHub Actions needs permission to deploy into Azure.
 
-Use this repo prefix code:
+Use a repo-specific prefix code when creating the GitHub Actions Azure credential. Azure05 and Azure06 share the same All Checks Out environments, resource groups, and public hostnames, but each GitHub repository should have its own Azure service principal so their credentials sit side by side clearly in Entra.
 
 ```bash
-REPO_PREFIX_CODE=azure05
+REPO_PREFIX_CODE=azure05 APP_PREFIX="all-checks-out-$REPO_PREFIX_CODE-github-actions" pnpm run setup:github-azure
 ```
 
-Run:
+For this repository, keep the prefix code as `azure05`.
+
+If these instructions are copied into another repo, change only the prefix code. For example, Azure06 uses:
 
 ```bash
-APP_PREFIX="all-checks-out-$REPO_PREFIX_CODE-github-actions" pnpm run setup:github-azure
-```
-
-If these instructions are copied into a later repo, change the prefix code.
-
-Examples:
-
-```text
-azure04
-azure05
-azure06
+REPO_PREFIX_CODE=azure06 APP_PREFIX="all-checks-out-$REPO_PREFIX_CODE-github-actions" pnpm run setup:github-azure
 ```
 
 Check the GitHub secret:
